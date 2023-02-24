@@ -5,6 +5,7 @@ import {Pane} from '../../components/pane'
 import {_DEBUG} from '../../constants'
 import {useDeskToolSetting} from '../../useDeskToolSetting'
 import {BaseDeskToolPaneProps} from '../types'
+import {PaneMenuItem} from '../../types'
 import {DEFAULT_ORDERING, EMPTY_RECORD} from './constants'
 import {
   applyOrderingFunctions,
@@ -27,6 +28,32 @@ function useShallowUnique<ValueType>(value: ValueType): ValueType {
     valueRef.current = value
   }
   return valueRef.current
+}
+
+const addSelectedStateToMenuItems = (options: {
+  menuItems?: PaneMenuItem[]
+  sortOrder?: SortOrder
+  layout?: GeneralPreviewLayoutKey
+}) => {
+  const {menuItems, sortOrder, layout} = options
+
+  return menuItems?.map((item) => {
+    if (item.params?.extendedProjection === sortOrder?.extendedProjection) {
+      return {
+        ...item,
+        selected: true,
+      }
+    }
+
+    if (layout === item.params?.layout) {
+      return {
+        ...item,
+        selected: true,
+      }
+    }
+
+    return {...item, selected: false}
+  })
 }
 
 /**
@@ -82,6 +109,11 @@ export const DocumentListPane = memo(function DocumentListPane(props: DocumentLi
     apiVersion,
   })
 
+  const menuItemsWithSelectedState = useMemo(
+    () => addSelectedStateToMenuItems({menuItems, sortOrder, layout}),
+    [layout, menuItems, sortOrder]
+  )
+
   return (
     <SourceProvider name={sourceName || parentSourceName}>
       <Pane currentMaxWidth={350} id={paneKey} maxWidth={640} minWidth={320} selected={isSelected}>
@@ -94,7 +126,7 @@ export const DocumentListPane = memo(function DocumentListPane(props: DocumentLi
         <DocumentListPaneHeader
           index={index}
           initialValueTemplates={initialValueTemplates}
-          menuItems={menuItems}
+          menuItems={menuItemsWithSelectedState}
           menuItemGroups={menuItemGroups}
           setLayout={setLayout}
           setSortOrder={setSortOrder}
